@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 import numpy as np
 import joblib
@@ -78,7 +78,7 @@ class TextInput(BaseModel):
 
 @app.get("/")
 def root():
-    return FileResponse("index.html")
+    return RedirectResponse(url="/docs")
 
 @app.get("/health")
 def health():
