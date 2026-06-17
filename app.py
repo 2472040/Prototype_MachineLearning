@@ -97,7 +97,10 @@ def predict(input: TextInput):
 
     # Threshold: kalau model tidak yakin & prediksi not_cyberbullying, flag sebagai cyberbullying
     if confidence < 0.60 and label == "not_cyberbullying":
-        label = "other_cyberbullying"
+        # Cari prediksi tertinggi kedua yang relevan
+        sorted_indices = np.argsort(proba_all)
+        second_best_pred = sorted_indices[-2]
+        label = le.inverse_transform([second_best_pred])[0]
         is_cyber = True
     else:
         is_cyber = label != "not_cyberbullying"
