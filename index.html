@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BullyGuard AI - Cyberbullying Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.1) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        textarea {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            resize: none;
+            min-height: 160px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+
+        textarea::placeholder {
+            color: rgba(148, 163, 184, 0.5);
+        }
+
+        .btn-analyze {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 1.2rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.6);
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -10px rgba(59, 130, 246, 0.8);
+        }
+
+        .btn-analyze:active {
+            transform: translateY(0);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-analyze.loading .spinner {
+            display: block;
+        }
+        .btn-analyze.loading .btn-text {
+            display: none;
+        }
+
+        /* Results section */
+        .result-box {
+            margin-top: 2rem;
+            padding: 2rem;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--glass-border);
+            display: none;
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .result-box.show {
+            display: block;
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-safe {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            animation: pulse-danger 2s infinite;
+        }
+
+        @keyframes pulse-danger {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .confidence {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .detail-item {
+            background: rgba(255,255,255,0.02);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #e2e8f0;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 2rem; }
+            .header h1 { font-size: 2.2rem; }
+            .details-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>BullyGuard AI</h1>
+            <p>Advanced Deep Learning Cyberbullying Detection</p>
+        </div>
+
+        <div class="input-group">
+            <textarea id="textInput" placeholder="Ketik teks, komentar, atau cuitan yang ingin Anda analisis di sini..." autocomplete="off" spellcheck="false"></textarea>
+        </div>
+
+        <button class="btn-analyze" id="analyzeBtn">
+            <span class="btn-text">Analisis Teks</span>
+            <div class="spinner"></div>
+        </button>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-header">
+                <div id="statusBadge" class="status-badge status-safe">
+                    <span id="statusIcon">✓</span> 
+                    <span id="statusText">AMAN</span>
+                </div>
+                <div class="confidence" id="confidenceValue">98.5%</div>
+            </div>
+            
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Kategori Spesifik</div>
+                    <div class="detail-value" id="categoryValue">not_cyberbullying</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Teks Dinormalisasi</div>
+                    <div class="detail-value" id="cleanedValue" style="font-size: 0.95rem; font-weight: 400; word-break: break-word;">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const textInput = document.getElementById('textInput');
+        const resultBox = document.getElementById('resultBox');
+        
+        // Result elements
+        const statusBadge = document.getElementById('statusBadge');
+        const statusIcon = document.getElementById('statusIcon');
+        const statusText = document.getElementById('statusText');
+        const confidenceValue = document.getElementById('confidenceValue');
+        const categoryValue = document.getElementById('categoryValue');
+        const cleanedValue = document.getElementById('cleanedValue');
+
+        analyzeBtn.addEventListener('click', async () => {
+            const text = textInput.value.trim();
+            if (!text) {
+                textInput.focus();
+                return;
+            }
+
+            // UI Loading state
+            analyzeBtn.classList.add('loading');
+            resultBox.classList.remove('show');
+
+            try {
+                // Call FastAPI backend
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                
+                // Update UI with results
+                setTimeout(() => {
+                    analyzeBtn.classList.remove('loading');
+                    
+                    if (data.is_cyberbullying) {
+                        statusBadge.className = 'status-badge status-danger';
+                        statusIcon.textContent = '⚠';
+                        statusText.textContent = 'CYBERBULLYING TERDETEKSI';
+                    } else {
+                        statusBadge.className = 'status-badge status-safe';
+                        statusIcon.textContent = '✓';
+                        statusText.textContent = 'AMAN';
+                    }
+
+                    confidenceValue.textContent = data.confidence;
+                    categoryValue.textContent = data.prediction.replace(/_/g, ' ').toUpperCase();
+                    cleanedValue.textContent = data.cleaned_text || "Teks kosong setelah dibersihkan";
+
+                    // Show result box with animation
+                    resultBox.style.display = 'block';
+                    // Trigger reflow
+                    void resultBox.offsetWidth;
+                    resultBox.classList.add('show');
+                    
+                }, 600); // Artificial delay for smooth animation
+
+            } catch (error) {
+                console.error('Error:', error);
+                analyzeBtn.classList.remove('loading');
+                alert('Terjadi kesalahan saat menghubungi server. Pastikan API berjalan.');
+            }
+        });
+
+        // Submit on Ctrl+Enter
+        textInput.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                analyzeBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>

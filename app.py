@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import numpy as np
 import joblib
@@ -77,7 +78,11 @@ class TextInput(BaseModel):
 
 @app.get("/")
 def root():
-    return {"message": "Cyberbullying Detection API is running!"}
+    return FileResponse("index.html")
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 @app.post("/predict")
 def predict(input: TextInput):
